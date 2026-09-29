@@ -1,25 +1,30 @@
-import logo from './logo.svg';
-import './App.css';
+import { Routes, Route } from "react-router-dom";
+import Navbar from "./components/layout/Navbar";
+import ProtectedRoute from "./routes/ProtectedRoute";
+import Home from "./pages/Home";
+import Login from "./pages/Login";
+import MovieDetails from "./pages/MovieDetails";
+import Favorites from "./pages/Favorites";
+import NotFound from "./pages/NotFound";
 
-function App() {
+export default function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <>
+      <Navbar />
+      <main className="w-full px-4 pt-6 pb-16 mx-auto max-w-7xl sm:px-6">
+        <Routes>
+          <Route path="/login" element={<Login />} />
+
+          {/* Everything below requires a logged-in user */}
+          <Route element={<ProtectedRoute />}>
+            <Route path="/" element={<Home />} />
+            <Route path="/movie/:id" element={<MovieDetails />} />
+            <Route path="/favorites" element={<Favorites />} />
+          </Route>
+
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </main>
+    </>
   );
 }
-
-export default App;
