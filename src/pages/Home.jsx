@@ -1,48 +1,49 @@
-import { useState } from "react";
 import SearchBar from "../components/movies/SearchBar";
 import GenreFilter from "../components/movies/GenreFilter";
+import FilterBar from "../components/movies/FilterBar";
+import ScrollModeToggle from "../components/movies/ScrollModeToggle";
 import TrendingRow from "../components/movies/TrendingRow";
 import MovieGrid from "../components/movies/MovieGrid";
 import SkeletonCard from "../components/common/SkeletonCard";
 import ErrorMessage from "../components/common/ErrorMessage";
 import EmptyState from "../components/common/EmptyState";
 import useFetch from "../hooks/useFetch";
-import useDebounce from "../hooks/useDebounce";
-import {
-  getTrending,
-  getGenres,
-  searchMovies,
-  discoverMovies,
-} from "../api/tmdb";
+import useInfiniteScroll from "../hooks/useInfiniteScroll";
+import { useMovies } from "../context/MovieContext";
+import { getTrending, getGenres } from "../api/tmdb";
 
-const SKELETON_COUNT = 10;
+const gridClass =
+  "grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5 md:grid-cols-4 lg:grid-cols-5";
+
+function SkeletonGrid({ count }) {
+  return (
+    <div className={gridClass}>
+      {Array.from({ length: count }).map((_, i) => (
+        <SkeletonCard key={i} />
+      ))}
+    </div>
+  );
+}
 
 export default function Home() {
-  const [query, setQuery] = useState("");
-  const [genre, setGenre] = useState(null);
+  // Search, filters and the movie list live in MovieContext
+  const {
+    query, setQuery, debouncedQuery, isSearching,
+    genre, setGenre, year, setYear, rating, setRating,
+    hasFilters, clearFilters,
+    mode, setMode,
+    items, loading, loadingMore, error, hasMore, loadMore, retry,
+  } = useMovies();
 
-  // Wait 500ms after typing stops, and ignore 1-character searches
-  const debouncedQuery = useDebounce(query.trim(), 500);
-  const isSearching = debouncedQuery.length >= 2;
-
-  // Trending and genres load once
+  // Trending and genre chips are independent, they load once
   const trending = useFetch((signal) => getTrending(signal), []);
   const genres = useFetch((signal) => getGenres(signal), []);
 
-  // Main list: search results if searching, otherwise the discover list
-  const list = useFetch(
-    (signal) =>
-      isSearching
-        ? searchMovies(debouncedQuery, 1, signal)
-        : discoverMovies({ genre, page: 1 }, signal),
-    [debouncedQuery, genre]
+  // Only watch the sentinel when there is something to load and nothing in flight
+  const sentinelRef = useInfiniteScroll(
+    loadMore,
+    mode === "infinite" && hasMore && !loading && !loadingMore && !error
   );
-
-  let movies = list.data?.results ?? [];
-  // The search endpoint can't filter by genre, so do it on the client
-  if (isSearching && genre) {
-    movies = movies.filter((m) => m.genre_ids?.includes(genre));
-  }
 
   return (
     <div className="space-y-8">
@@ -56,14 +57,10 @@ export default function Home() {
         </p>
       </section>
 
-      <SearchBar
-        value={query}
-        onChange={setQuery}
-        onClear={() => setQuery("")}
-      />
+      <SearchBar value={query} onChange={setQuery} onClear={() => setQuery("")} />
 
-      {/* Trending row: hidden while searching */}
-      {!isSearching && (
+      {/* Trending row: hidden while searching or filtering */}
+      {!isSearching && !hasFilters && (
         <>
           {trending.loading && (
             <div className="flex gap-4 overflow-x-auto no-scrollbar">
@@ -83,35 +80,58 @@ export default function Home() {
 
       {/* Main list */}
       <section className="space-y-4">
-        <h2 className="text-xl font-bold">
-          {isSearching ? `Results for "${debouncedQuery}"` : "Browse Movies"}
-        </h2>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-xl font-bold">
+            {isSearching ? `Results for "${debouncedQuery}"` : "Browse Movies"}
+          </h2>
+          <ScrollModeToggle mode={mode} onChange={setMode} />
+        </div>
 
-        <GenreFilter
-          genres={genres.data ?? []}
-          selected={genre}
-          onSelect={setGenre}
+        <GenreFilter genres={genres.data ?? []} selected={genre} onSelect={setGenre} />
+
+        <FilterBar
+          year={year}
+          rating={rating}
+          onYear={setYear}
+          onRating={setRating}
+          onClear={clearFilters}
+          showClear={hasFilters}
         />
 
-        {list.loading && (
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5 md:grid-cols-4 lg:grid-cols-5">
-            {Array.from({ length: SKELETON_COUNT }).map((_, i) => (
-              <SkeletonCard key={i} />
-            ))}
+        {loading && <SkeletonGrid count={10} />}
+
+        {items.length > 0 && <MovieGrid movies={items} />}
+
+        {loadingMore && <SkeletonGrid count={5} />}
+
+        {error && <ErrorMessage message={error} onRetry={retry} />}
+
+        {!loading && !error && items.length === 0 && (
+          <EmptyState
+            title="No movies found"
+            subtitle="Try a different title, genre, year or rating."
+          />
+        )}
+
+        {/* Invisible marker that triggers the next page in infinite mode */}
+        {mode === "infinite" && <div ref={sentinelRef} aria-hidden="true" className="h-1" />}
+
+        {/* Load More button mode */}
+        {mode === "loadmore" && hasMore && !loading && !loadingMore && !error && (
+          <div className="text-center">
+            <button
+              onClick={loadMore}
+              className="rounded-full bg-brand-500 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-600 active:scale-95"
+            >
+              Load more
+            </button>
           </div>
         )}
 
-        {list.error && <ErrorMessage message={list.error} onRetry={list.retry} />}
-
-        {!list.loading && !list.error && movies.length > 0 && (
-          <MovieGrid movies={movies} />
-        )}
-
-        {!list.loading && !list.error && movies.length === 0 && (
-          <EmptyState
-            title="No movies found"
-            subtitle="Try a different title or genre."
-          />
+        {!hasMore && !loading && !error && items.length > 0 && (
+          <p className="text-sm text-center text-slate-500 dark:text-slate-400">
+            You've reached the end 🎬
+          </p>
         )}
       </section>
     </div>

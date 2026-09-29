@@ -66,24 +66,64 @@ export const getTrending = async (signal) => {
   return data.results ?? [];
 };
 
-// Search by title
-export const searchMovies = async (query, page = 1, signal) =>
-  toPage(await get("/search/movie", { query, page, include_adult: false }, signal));
+// // Search by title
+// export const searchMovies = async (query, page = 1, signal) =>
+//   toPage(await get("/search/movie", { query, page, include_adult: false }, signal));
 
-// Browse list, optionally filtered by genre (search can't filter by genre, discover can)
-export const discoverMovies = async ({ genre, page = 1 } = {}, signal) =>
+// // Browse list, optionally filtered by genre (search can't filter by genre, discover can)
+// export const discoverMovies = async ({ genre, page = 1 } = {}, signal) =>
+//   toPage(
+//     await get(
+//       "/discover/movie",
+//       {
+//         sort_by: "popularity.desc",
+//         with_genres: genre || undefined, // undefined params are dropped by axios
+//         page,
+//         include_adult: false,
+//       },
+//       signal
+//     )
+//   );
+
+// Search by title (optionally narrowed to a release year)
+export const searchMovies = async ({ query, year, page = 1 }, signal) =>
+  toPage(
+    await get(
+      "/search/movie",
+      {
+        query,
+        page,
+        include_adult: false,
+        primary_release_year: year || undefined, // undefined params are dropped by axios
+      },
+      signal
+    )
+  );
+
+// Browse list with genre, year and minimum rating filters.
+// Search can't filter by genre or rating, but discover can.
+export const discoverMovies = async (
+  { genre, year, minRating, page = 1 } = {},
+  signal
+) =>
   toPage(
     await get(
       "/discover/movie",
       {
         sort_by: "popularity.desc",
-        with_genres: genre || undefined, // undefined params are dropped by axios
+        with_genres: genre || undefined,
+        primary_release_year: year || undefined,
+        "vote_average.gte": minRating || undefined,
+        // Ignore movies with only a handful of votes, they skew ratings
+        "vote_count.gte": minRating ? 100 : undefined,
         page,
         include_adult: false,
       },
       signal
     )
   );
+
+
 
 // Genre list for the filter chips
 export const getGenres = async (signal) => {
