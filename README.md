@@ -4,7 +4,7 @@ CineScope is a movie discovery web app built with React and the TMDb API. You ca
 
 **Live Demo:** https://cinescope-movie-explorer-kohl.vercel.app/
 
-![CineScope home page](root/screenshot/homescreen.png)
+![CineScope home page](screenshot/homescreen.png)
 
 ## Why I built this
 
@@ -266,5 +266,5 @@ This product uses the TMDb API but is not endorsed or certified by TMDb.
 ## Author
 
 **Suranga Prabash**
-GitHub   : [https://github.com/surangaprabash](https://github.com/surangaprabash)
-LinkedIn : [https://linkedin.com/in/surangaprabash](https://www.linkedin.com/in/surangaprabash/)
+
+[GitHub](https://github.com/surangaprabash) · [LinkedIn](https://www.linkedin.com/in/surangaprabash/)
