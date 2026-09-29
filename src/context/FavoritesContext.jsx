@@ -21,11 +21,19 @@ export function FavoritesProvider({ children }) {
 
   const isFavorite = (id) => favorites.some((m) => m.id === id);
 
+  const toSummary = ({ id, title, poster_path, release_date, vote_average }) => ({
+    id,
+    title,
+    poster_path,
+    release_date,
+    vote_average,
+  });
+
   const toggleFavorite = (movie) => {
     setFavorites((prev) =>
       prev.some((m) => m.id === movie.id)
         ? prev.filter((m) => m.id !== movie.id)
-        : [...prev, movie]
+        : [...prev, toSummary(movie)]
     );
   };
 

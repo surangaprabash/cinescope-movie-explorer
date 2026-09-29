@@ -16,3 +16,11 @@ export const formatRating = (rating) =>
 // Keep only characters valid in a YouTube video id.
 // This stops odd values from ending up inside an iframe URL.
 export const isValidYouTubeKey = (key) => /^[A-Za-z0-9_-]{6,20}$/.test(key || "");
+
+// 125 -> "2h 5m"
+export const formatRuntime = (minutes) => {
+  if (!minutes) return null;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return h ? `${h}h ${m}m` : `${m}m`;
+};

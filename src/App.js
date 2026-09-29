@@ -25,6 +25,9 @@ export default function App() {
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
+      <footer className="py-6 text-xs text-center border-t border-slate-200 text-slate-500 dark:border-slate-800 dark:text-slate-400">
+        This product uses the TMDb API but is not endorsed or certified by TMDb.
+      </footer>
     </>
   );
 }

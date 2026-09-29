@@ -9,6 +9,8 @@ import { FavoritesProvider } from "./context/FavoritesContext";
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 
+console.log("KEY:", process.env.TMDB_API_KEY);
+
 root.render(
   <React.StrictMode>
     <BrowserRouter>
@@ -22,3 +24,4 @@ root.render(
     </BrowserRouter>
   </React.StrictMode>
 );
+
